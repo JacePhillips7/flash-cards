@@ -12,29 +12,55 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { View } from "react-native";
+import { Text, View } from "react-native";
 import "../global.css";
 
-import { useForm } from "@tanstack/react-form";
+import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { createDeck, getAllDecks } from "@/services/deck.service";
+import { useForm } from "@tanstack/react-form";
+import { useEffect, useState } from "react";
+interface ICreateDeck {
+  name: string;
+  desc: string;
+}
 
 export default function Index() {
+  const [decks, setDecks] = useState<string[]>([]);
+  const setAllDecks = async function () {
+    let d = await getAllDecks();
+    setDecks(d);
+  };
+  useEffect(() => {
+    setAllDecks();
+  }, []);
+  function handleNewDeck(value: ICreateDeck) {
+    console.log("new deck:", value);
+    createDeck(value.name, value.desc);
+    setAllDecks();
+  }
   return (
     <View className="flex-1 justify-center items-center">
-      {CreateDeckButton()}
+      <CreateDeckButton submit={handleNewDeck} />
+      <Text>You have {decks.length} decks</Text>
     </View>
   );
 }
 
 // Create Deck button
-function CreateDeckButton() {
+function CreateDeckButton({ submit }: { submit: (d: ICreateDeck) => void }) {
   const defaultDeck = { name: "", desc: "" };
+  const [open, setOpen] = useState<boolean>(false);
   const form = useForm({
     defaultValues: defaultDeck,
     onSubmit: ({ value }) => {
-      console.log(value);
+      let d: ICreateDeck = {
+        name: value.name,
+        desc: value.desc,
+      };
+      submit(d);
+      setOpen(false);
     },
   });
 
@@ -45,7 +71,7 @@ function CreateDeckButton() {
         form.handleSubmit();
       }}
     >
-      <Dialog>
+      <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <Card className="hover:bg-slate-200 hover:cursor-pointer">
             <CardHeader>
